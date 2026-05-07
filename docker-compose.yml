@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: travel-backend
+    ports:
+      - "13054:3000"
+    environment:
+      - DATABASE_URL=postgresql://dev:dev123456@host.docker.internal:5432/db_zj_60054
+      - REDIS_URL=redis://default:redis123456@host.docker.internal:6379
+      - JWT_SECRET=dev-secret-key-change-in-production
+      - PORT=3000
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+      - /app/node_modules
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - travel-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: travel-frontend
+    ports:
+      - "16054:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:13054
+    volumes:
+      - ./frontend/src:/app/src
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - travel-network
+
+networks:
+  travel-network:
+    driver: bridge

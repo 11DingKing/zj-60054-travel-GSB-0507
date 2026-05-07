@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlanStatus {
+  PLANNING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ItemType {
+  ATTRACTION
+  RESTAURANT
+  HOTEL
+  TRANSPORTATION
+}
+
+enum ExpenseCategory {
+  TRANSPORTATION
+  ACCOMMODATION
+  DINING
+  TICKETS
+  SHOPPING
+  OTHER
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  plans     Plan[]
+  favorites Favorite[]
+}
+
+model Plan {
+  id              Int         @id @default(autoincrement())
+  title           String
+  destinationCity String
+  startDate       DateTime
+  endDate         DateTime
+  budget          Float
+  coverImage      String?
+  status          PlanStatus  @default(PLANNING)
+  isPublic        Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  userId          Int
+
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itineraries     Itinerary[]
+  expenses        Expense[]
+  packingList     PackingList?
+  favorites       Favorite[]
+}
+
+model Itinerary {
+  id        Int      @id @default(autoincrement())
+  planId    Int
+  dayNumber Int
+  date      DateTime
+
+  plan      Plan          @relation(fields: [planId], references: [id], onDelete: Cascade)
+  items     ItineraryItem[]
+}
+
+model ItineraryItem {
+  id          Int       @id @default(autoincrement())
+  itineraryId Int
+  name        String
+  address     String?
+  startTime   DateTime?
+  endTime     DateTime?
+  estimatedCost Float?
+  notes       String?
+  type        ItemType
+  icon        String?
+  sortOrder   Int       @default(0)
+
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id          Int             @id @default(autoincrement())
+  planId      Int
+  amount      Float
+  category    ExpenseCategory
+  date        DateTime
+  notes       String?
+
+  plan        Plan            @relation(fields: [planId], references: [id], onDelete: Cascade)
+}
+
+model PackingList {
+  id      Int   @id @default(autoincrement())
+  planId  Int   @unique
+
+  plan    Plan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+  items   PackingItem[]
+}
+
+model PackingItem {
+  id            Int         @id @default(autoincrement())
+  packingListId Int
+  name          String
+  quantity      Int         @default(1)
+  isPacked      Boolean     @default(false)
+
+  packingList   PackingList @relation(fields: [packingListId], references: [id], onDelete: Cascade)
+}
+
+model Favorite {
+  id      Int   @id @default(autoincrement())
+  userId  Int
+  planId  Int
+
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan    Plan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, planId])
+}
