@@ -3,25 +3,12 @@ import { PlansService } from "./plans.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
 import { PlanStatus } from "@prisma/client";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 describe("PlansService", () => {
   let service: PlansService;
-  let prisma: {
-    plan: {
-      create: jest.Mock;
-      findMany: jest.Mock;
-      findUnique: jest.Mock;
-      update: jest.Mock;
-      delete: jest.Mock;
-      groupBy: jest.Mock;
-    };
-  };
-  let redis: {
-    get: jest.Mock;
-    set: jest.Mock;
-    del: jest.Mock;
-    delPattern: jest.Mock;
-  };
+  let prisma: DeepMockProxy<PrismaService>;
+  let redis: DeepMockProxy<RedisService>;
 
   const mockPlan = {
     id: 1,
@@ -44,25 +31,19 @@ describe("PlansService", () => {
   };
 
   beforeEach(async () => {
-    prisma = {
-      plan: {
-        create: jest.fn().mockResolvedValue(mockPlan),
-        findMany: jest.fn().mockResolvedValue([mockPlan]),
-        findUnique: jest.fn().mockResolvedValue(mockPlan),
-        update: jest.fn().mockResolvedValue(mockPlan),
-        delete: jest.fn().mockResolvedValue(mockPlan),
-        groupBy: jest.fn().mockResolvedValue([
-          { destinationCity: "Tokyo", _count: { id: 3 } },
-        ]),
-      },
-    };
+    prisma = mockDeep<PrismaService>();
+    redis = mockDeep<RedisService>();
 
-    redis = {
-      get: jest.fn().mockResolvedValue(null),
-      set: jest.fn().mockResolvedValue(undefined),
-      del: jest.fn().mockResolvedValue(undefined),
-      delPattern: jest.fn().mockResolvedValue(undefined),
-    };
+    prisma.plan.create.mockResolvedValue(mockPlan as any);
+    prisma.plan.findMany.mockResolvedValue([mockPlan] as any);
+    prisma.plan.findUnique.mockResolvedValue(mockPlan as any);
+    prisma.plan.update.mockResolvedValue(mockPlan as any);
+    prisma.plan.delete.mockResolvedValue(mockPlan as any);
+    prisma.plan.groupBy.mockResolvedValue([
+      { destinationCity: "Tokyo", _count: { id: 3 } },
+    ] as any);
+
+    redis.get.mockResolvedValue(null);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -133,7 +114,7 @@ describe("PlansService", () => {
 
   describe("findPublic", () => {
     it("should return cached plans when available", async () => {
-      redis.get.mockResolvedValue([mockPlan]);
+      redis.get.mockResolvedValue([mockPlan] as any);
 
       const result = await service.findPublic();
 
@@ -186,7 +167,7 @@ describe("PlansService", () => {
   describe("getPopularDestinations", () => {
     it("should return cached destinations when available", async () => {
       const cached = [{ city: "Tokyo", planCount: 3 }];
-      redis.get.mockResolvedValue(cached);
+      redis.get.mockResolvedValue(cached as any);
 
       const result = await service.getPopularDestinations();
 

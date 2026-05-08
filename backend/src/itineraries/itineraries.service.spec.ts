@@ -2,26 +2,11 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { ItinerariesService } from "./itineraries.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { ItemType } from "@prisma/client";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 describe("ItinerariesService", () => {
   let service: ItinerariesService;
-  let prisma: {
-    itinerary: {
-      aggregate: jest.Mock;
-      create: jest.Mock;
-      findMany: jest.Mock;
-      findUnique: jest.Mock;
-      update: jest.Mock;
-      delete: jest.Mock;
-    };
-    itineraryItem: {
-      aggregate: jest.Mock;
-      create: jest.Mock;
-      update: jest.Mock;
-      delete: jest.Mock;
-      findMany: jest.Mock;
-    };
-  };
+  let prisma: DeepMockProxy<PrismaService>;
 
   const mockItinerary = {
     id: 1,
@@ -46,25 +31,20 @@ describe("ItinerariesService", () => {
   };
 
   beforeEach(async () => {
-    prisma = {
-      itinerary: {
-        aggregate: jest.fn().mockResolvedValue({ _max: { dayNumber: null } }),
-        create: jest.fn().mockResolvedValue(mockItinerary),
-        findMany: jest.fn().mockResolvedValue([mockItinerary]),
-        findUnique: jest.fn().mockResolvedValue(mockItinerary),
-        update: jest.fn().mockResolvedValue(mockItinerary),
-        delete: jest.fn().mockResolvedValue(mockItinerary),
-      },
-      itineraryItem: {
-        aggregate: jest
-          .fn()
-          .mockResolvedValue({ _max: { sortOrder: null } }),
-        create: jest.fn().mockResolvedValue(mockItem),
-        update: jest.fn().mockResolvedValue(mockItem),
-        delete: jest.fn().mockResolvedValue(mockItem),
-        findMany: jest.fn().mockResolvedValue([mockItem]),
-      },
-    };
+    prisma = mockDeep<PrismaService>();
+
+    prisma.itinerary.aggregate.mockResolvedValue({ _max: { dayNumber: null } } as any);
+    prisma.itinerary.create.mockResolvedValue(mockItinerary as any);
+    prisma.itinerary.findMany.mockResolvedValue([mockItinerary] as any);
+    prisma.itinerary.findUnique.mockResolvedValue(mockItinerary as any);
+    prisma.itinerary.update.mockResolvedValue(mockItinerary as any);
+    prisma.itinerary.delete.mockResolvedValue(mockItinerary as any);
+
+    prisma.itineraryItem.aggregate.mockResolvedValue({ _max: { sortOrder: null } } as any);
+    prisma.itineraryItem.create.mockResolvedValue(mockItem as any);
+    prisma.itineraryItem.update.mockResolvedValue(mockItem as any);
+    prisma.itineraryItem.delete.mockResolvedValue(mockItem as any);
+    prisma.itineraryItem.findMany.mockResolvedValue([mockItem] as any);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [ItinerariesService, { provide: PrismaService, useValue: prisma }],
@@ -99,9 +79,7 @@ describe("ItinerariesService", () => {
     });
 
     it("should increment dayNumber based on existing itineraries", async () => {
-      prisma.itinerary.aggregate.mockResolvedValue({
-        _max: { dayNumber: 3 },
-      });
+      prisma.itinerary.aggregate.mockResolvedValue({ _max: { dayNumber: 3 } } as any);
 
       const dto = { date: "2025-01-01" };
       await service.create(1, dto as any);
@@ -200,9 +178,7 @@ describe("ItinerariesService", () => {
     });
 
     it("should increment sortOrder based on existing items", async () => {
-      prisma.itineraryItem.aggregate.mockResolvedValue({
-        _max: { sortOrder: 2 },
-      });
+      prisma.itineraryItem.aggregate.mockResolvedValue({ _max: { sortOrder: 2 } } as any);
 
       const dto = {
         name: "Visit Temple",

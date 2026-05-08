@@ -2,18 +2,11 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { UsersService } from "./users.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { NotFoundException } from "@nestjs/common";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 describe("UsersService", () => {
   let service: UsersService;
-  let prisma: {
-    user: {
-      findUnique: jest.Mock;
-      update: jest.Mock;
-    };
-    plan: {
-      findMany: jest.Mock;
-    };
-  };
+  let prisma: DeepMockProxy<PrismaService>;
 
   const mockUser = {
     id: 1,
@@ -25,15 +18,11 @@ describe("UsersService", () => {
   };
 
   beforeEach(async () => {
-    prisma = {
-      user: {
-        findUnique: jest.fn().mockResolvedValue(mockUser),
-        update: jest.fn().mockResolvedValue(mockUser),
-      },
-      plan: {
-        findMany: jest.fn().mockResolvedValue([]),
-      },
-    };
+    prisma = mockDeep<PrismaService>();
+
+    prisma.user.findUnique.mockResolvedValue(mockUser as any);
+    prisma.user.update.mockResolvedValue(mockUser as any);
+    prisma.plan.findMany.mockResolvedValue([] as any);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [UsersService, { provide: PrismaService, useValue: prisma }],
@@ -112,7 +101,7 @@ describe("UsersService", () => {
           endDate: new Date("2025-03-05"),
           expenses: [{ amount: 2000 }],
         },
-      ]);
+      ] as any);
 
       const result = await service.getUserStatistics(1);
 
@@ -137,7 +126,7 @@ describe("UsersService", () => {
           endDate: new Date("2025-02-03"),
           expenses: [],
         },
-      ]);
+      ] as any);
 
       const result = await service.getUserStatistics(1);
 

@@ -2,29 +2,18 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { StatisticsService } from "./statistics.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { ExpenseCategory, PlanStatus } from "@prisma/client";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 describe("StatisticsService", () => {
   let service: StatisticsService;
-  let prisma: {
-    plan: {
-      findMany: jest.Mock;
-      count: jest.Mock;
-    };
-    expense: {
-      findMany: jest.Mock;
-    };
-  };
+  let prisma: DeepMockProxy<PrismaService>;
 
   beforeEach(async () => {
-    prisma = {
-      plan: {
-        findMany: jest.fn().mockResolvedValue([]),
-        count: jest.fn().mockResolvedValue(0),
-      },
-      expense: {
-        findMany: jest.fn().mockResolvedValue([]),
-      },
-    };
+    prisma = mockDeep<PrismaService>();
+
+    prisma.plan.findMany.mockResolvedValue([] as any);
+    prisma.plan.count.mockResolvedValue(0);
+    prisma.expense.findMany.mockResolvedValue([] as any);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [StatisticsService, { provide: PrismaService, useValue: prisma }],
@@ -54,7 +43,7 @@ describe("StatisticsService", () => {
         { destinationCity: "Tokyo" },
         { destinationCity: "Tokyo" },
         { destinationCity: "Paris" },
-      ]);
+      ] as any);
 
       const result = await service.getCityDistribution(1);
 
@@ -107,7 +96,7 @@ describe("StatisticsService", () => {
         { category: ExpenseCategory.DINING, amount: 100 },
         { category: ExpenseCategory.DINING, amount: 50 },
         { category: ExpenseCategory.TRANSPORTATION, amount: 200 },
-      ]);
+      ] as any);
 
       const result = await service.getExpenseCategories(1);
 
@@ -136,17 +125,14 @@ describe("StatisticsService", () => {
         {
           title: "Tokyo Trip",
           budget: 10000,
-          expenses: [
-            { amount: 3000 },
-            { amount: 2000 },
-          ],
+          expenses: [{ amount: 3000 }, { amount: 2000 }],
         },
         {
           title: "Paris Trip",
           budget: 8000,
           expenses: [{ amount: 9000 }],
         },
-      ]);
+      ] as any);
 
       const result = await service.getBudgetVsActual(1);
 
@@ -163,7 +149,7 @@ describe("StatisticsService", () => {
           budget: 5000,
           expenses: [],
         },
-      ]);
+      ] as any);
 
       const result = await service.getBudgetVsActual(1);
 

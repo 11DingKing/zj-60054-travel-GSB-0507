@@ -2,18 +2,11 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { ExpensesService } from "./expenses.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { ExpenseCategory } from "@prisma/client";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 describe("ExpensesService", () => {
   let service: ExpensesService;
-  let prisma: {
-    expense: {
-      create: jest.Mock;
-      findMany: jest.Mock;
-      findUnique: jest.Mock;
-      update: jest.Mock;
-      delete: jest.Mock;
-    };
-  };
+  let prisma: DeepMockProxy<PrismaService>;
 
   const mockExpense = {
     id: 1,
@@ -25,15 +18,13 @@ describe("ExpensesService", () => {
   };
 
   beforeEach(async () => {
-    prisma = {
-      expense: {
-        create: jest.fn().mockResolvedValue(mockExpense),
-        findMany: jest.fn().mockResolvedValue([mockExpense]),
-        findUnique: jest.fn().mockResolvedValue(mockExpense),
-        update: jest.fn().mockResolvedValue(mockExpense),
-        delete: jest.fn().mockResolvedValue(mockExpense),
-      },
-    };
+    prisma = mockDeep<PrismaService>();
+
+    prisma.expense.create.mockResolvedValue(mockExpense as any);
+    prisma.expense.findMany.mockResolvedValue([mockExpense] as any);
+    prisma.expense.findUnique.mockResolvedValue(mockExpense as any);
+    prisma.expense.update.mockResolvedValue(mockExpense as any);
+    prisma.expense.delete.mockResolvedValue(mockExpense as any);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [ExpensesService, { provide: PrismaService, useValue: prisma }],
@@ -88,7 +79,7 @@ describe("ExpensesService", () => {
         { amount: 100, category: ExpenseCategory.DINING },
         { amount: 50, category: ExpenseCategory.DINING },
         { amount: 200, category: ExpenseCategory.TRANSPORTATION },
-      ]);
+      ] as any);
 
       const result = await service.getSummary(1);
 
@@ -100,7 +91,7 @@ describe("ExpensesService", () => {
     });
 
     it("should handle empty expenses", async () => {
-      prisma.expense.findMany.mockResolvedValue([]);
+      prisma.expense.findMany.mockResolvedValue([] as any);
 
       const result = await service.getSummary(1);
 

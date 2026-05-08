@@ -1,21 +1,11 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { PackingListsService } from "./packing-lists.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 describe("PackingListsService", () => {
   let service: PackingListsService;
-  let prisma: {
-    packingList: {
-      create: jest.Mock;
-      findUnique: jest.Mock;
-    };
-    packingItem: {
-      create: jest.Mock;
-      update: jest.Mock;
-      delete: jest.Mock;
-      findUnique: jest.Mock;
-    };
-  };
+  let prisma: DeepMockProxy<PrismaService>;
 
   const mockPackingList = {
     id: 1,
@@ -32,18 +22,14 @@ describe("PackingListsService", () => {
   };
 
   beforeEach(async () => {
-    prisma = {
-      packingList: {
-        create: jest.fn().mockResolvedValue(mockPackingList),
-        findUnique: jest.fn().mockResolvedValue(mockPackingList),
-      },
-      packingItem: {
-        create: jest.fn().mockResolvedValue(mockItem),
-        update: jest.fn().mockResolvedValue(mockItem),
-        delete: jest.fn().mockResolvedValue(mockItem),
-        findUnique: jest.fn().mockResolvedValue(mockItem),
-      },
-    };
+    prisma = mockDeep<PrismaService>();
+
+    prisma.packingList.create.mockResolvedValue(mockPackingList as any);
+    prisma.packingList.findUnique.mockResolvedValue(mockPackingList as any);
+    prisma.packingItem.create.mockResolvedValue(mockItem as any);
+    prisma.packingItem.update.mockResolvedValue(mockItem as any);
+    prisma.packingItem.delete.mockResolvedValue(mockItem as any);
+    prisma.packingItem.findUnique.mockResolvedValue(mockItem as any);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [PackingListsService, { provide: PrismaService, useValue: prisma }],
@@ -119,8 +105,8 @@ describe("PackingListsService", () => {
 
   describe("toggleItem", () => {
     it("should toggle isPacked from false to true", async () => {
-      prisma.packingItem.findUnique.mockResolvedValue({ ...mockItem, isPacked: false });
-      prisma.packingItem.update.mockResolvedValue({ ...mockItem, isPacked: true });
+      prisma.packingItem.findUnique.mockResolvedValue({ ...mockItem, isPacked: false } as any);
+      prisma.packingItem.update.mockResolvedValue({ ...mockItem, isPacked: true } as any);
 
       const result = await service.toggleItem(1);
 
@@ -145,11 +131,11 @@ describe("PackingListsService", () => {
 
     it("should create packing list if it does not exist and add template items", async () => {
       prisma.packingList.findUnique.mockResolvedValueOnce(null);
-      prisma.packingList.create.mockResolvedValue({ ...mockPackingList, id: 1 });
+      prisma.packingList.create.mockResolvedValue({ ...mockPackingList, id: 1 } as any);
       prisma.packingList.findUnique.mockResolvedValueOnce({
         ...mockPackingList,
         items: [{ name: "泳衣", quantity: 2, isPacked: false }],
-      });
+      } as any);
 
       const result = await service.applyTemplate(1, "beach");
 
@@ -158,11 +144,11 @@ describe("PackingListsService", () => {
     });
 
     it("should add template items to existing packing list", async () => {
-      prisma.packingList.findUnique.mockResolvedValue(mockPackingList);
+      prisma.packingList.findUnique.mockResolvedValue(mockPackingList as any);
       prisma.packingList.findUnique.mockResolvedValueOnce({
         ...mockPackingList,
         items: [{ name: "登山鞋", quantity: 1, isPacked: false }],
-      });
+      } as any);
 
       const result = await service.applyTemplate(1, "hiking");
 

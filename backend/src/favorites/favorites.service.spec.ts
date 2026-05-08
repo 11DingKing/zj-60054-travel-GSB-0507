@@ -1,17 +1,11 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { FavoritesService } from "./favorites.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 describe("FavoritesService", () => {
   let service: FavoritesService;
-  let prisma: {
-    favorite: {
-      findMany: jest.Mock;
-      upsert: jest.Mock;
-      delete: jest.Mock;
-      findUnique: jest.Mock;
-    };
-  };
+  let prisma: DeepMockProxy<PrismaService>;
 
   const mockPlan = {
     id: 1,
@@ -21,14 +15,14 @@ describe("FavoritesService", () => {
   };
 
   beforeEach(async () => {
-    prisma = {
-      favorite: {
-        findMany: jest.fn().mockResolvedValue([{ id: 1, userId: 1, planId: 1, plan: mockPlan }]),
-        upsert: jest.fn().mockResolvedValue({ id: 1, userId: 1, planId: 1 }),
-        delete: jest.fn().mockResolvedValue({ id: 1, userId: 1, planId: 1 }),
-        findUnique: jest.fn().mockResolvedValue({ id: 1, userId: 1, planId: 1 }),
-      },
-    };
+    prisma = mockDeep<PrismaService>();
+
+    prisma.favorite.findMany.mockResolvedValue([
+      { id: 1, userId: 1, planId: 1, plan: mockPlan },
+    ] as any);
+    prisma.favorite.upsert.mockResolvedValue({ id: 1, userId: 1, planId: 1 } as any);
+    prisma.favorite.delete.mockResolvedValue({ id: 1, userId: 1, planId: 1 } as any);
+    prisma.favorite.findUnique.mockResolvedValue({ id: 1, userId: 1, planId: 1 } as any);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [FavoritesService, { provide: PrismaService, useValue: prisma }],
