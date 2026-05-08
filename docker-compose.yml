@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   backend:
@@ -19,6 +19,7 @@ services:
       - /app/node_modules
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    command: sh -c "npx prisma migrate deploy && npm run start:prod"
     networks:
       - travel-network
 
