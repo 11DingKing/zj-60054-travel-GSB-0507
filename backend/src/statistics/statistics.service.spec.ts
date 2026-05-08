@@ -1,10 +1,11 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { StatisticsService } from "./statistics.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 describe("StatisticsService", () => {
   let service: StatisticsService;
-  let prisma: PrismaService;
+  let prisma: DeepMockProxy<PrismaService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -12,21 +13,13 @@ describe("StatisticsService", () => {
         StatisticsService,
         {
           provide: PrismaService,
-          useValue: {
-            plan: {
-              findMany: jest.fn(),
-              count: jest.fn(),
-            },
-            expense: {
-              findMany: jest.fn(),
-            },
-          },
+          useValue: mockDeep<PrismaService>(),
         },
       ],
     }).compile();
 
     service = module.get<StatisticsService>(StatisticsService);
-    prisma = module.get(PrismaService);
+    prisma = module.get(PrismaService) as DeepMockProxy<PrismaService>;
   });
 
   it("should be defined", () => {
@@ -41,7 +34,7 @@ describe("StatisticsService", () => {
         { destinationCity: "北京" },
       ];
 
-      jest.spyOn(prisma.plan, "findMany").mockResolvedValue(plans as any);
+      prisma.plan.findMany.mockResolvedValue(plans as any);
 
       const result = await service.getCityDistribution(1);
 
@@ -54,7 +47,7 @@ describe("StatisticsService", () => {
     });
 
     it("should return empty array when no plans", async () => {
-      jest.spyOn(prisma.plan, "findMany").mockResolvedValue([]);
+      prisma.plan.findMany.mockResolvedValue([]);
 
       const result = await service.getCityDistribution(1);
 
@@ -64,7 +57,7 @@ describe("StatisticsService", () => {
 
   describe("getMonthlyFrequency", () => {
     it("should return monthly frequency for 12 months", async () => {
-      jest.spyOn(prisma.plan, "count").mockResolvedValue(0);
+      prisma.plan.count.mockResolvedValue(0);
 
       const result = await service.getMonthlyFrequency(1);
 
@@ -78,7 +71,7 @@ describe("StatisticsService", () => {
 
     it("should return correct counts", async () => {
       let callCount = 0;
-      jest.spyOn(prisma.plan, "count").mockImplementation(() => {
+      prisma.plan.count.mockImplementation(() => {
         callCount++;
         return Promise.resolve(callCount % 2 === 0 ? 5 : 3) as any;
       });
@@ -101,7 +94,7 @@ describe("StatisticsService", () => {
         { category: "DINING", amount: 200 },
       ];
 
-      jest.spyOn(prisma.expense, "findMany").mockResolvedValue(expenses as any);
+      prisma.expense.findMany.mockResolvedValue(expenses as any);
 
       const result = await service.getExpenseCategories(1);
 
@@ -115,7 +108,7 @@ describe("StatisticsService", () => {
     });
 
     it("should return empty array when no expenses", async () => {
-      jest.spyOn(prisma.expense, "findMany").mockResolvedValue([]);
+      prisma.expense.findMany.mockResolvedValue([]);
 
       const result = await service.getExpenseCategories(1);
 
@@ -141,7 +134,7 @@ describe("StatisticsService", () => {
         },
       ];
 
-      jest.spyOn(prisma.plan, "findMany").mockResolvedValue(plans as any);
+      prisma.plan.findMany.mockResolvedValue(plans as any);
 
       const result = await service.getBudgetVsActual(1);
 
@@ -152,7 +145,7 @@ describe("StatisticsService", () => {
     });
 
     it("should return empty array when no plans", async () => {
-      jest.spyOn(prisma.plan, "findMany").mockResolvedValue([]);
+      prisma.plan.findMany.mockResolvedValue([]);
 
       const result = await service.getBudgetVsActual(1);
 

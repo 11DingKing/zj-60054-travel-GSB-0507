@@ -4,12 +4,13 @@ import { PrismaService } from "../prisma/prisma.service";
 import { JwtService } from "@nestjs/jwt";
 import { ConflictException, UnauthorizedException } from "@nestjs/common";
 import * as bcrypt from "bcrypt";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 jest.mock("bcrypt");
 
 describe("AuthService", () => {
   let service: AuthService;
-  let prisma: PrismaService;
+  let prisma: DeepMockProxy<PrismaService>;
   let jwtService: JwtService;
 
   beforeEach(async () => {
@@ -18,12 +19,7 @@ describe("AuthService", () => {
         AuthService,
         {
           provide: PrismaService,
-          useValue: {
-            user: {
-              findUnique: jest.fn(),
-              create: jest.fn(),
-            },
-          },
+          useValue: mockDeep<PrismaService>(),
         },
         {
           provide: JwtService,
@@ -35,7 +31,7 @@ describe("AuthService", () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    prisma = module.get(PrismaService);
+    prisma = module.get(PrismaService) as DeepMockProxy<PrismaService>;
     jwtService = module.get(JwtService);
   });
 
@@ -55,7 +51,7 @@ describe("AuthService", () => {
         updatedAt: new Date(),
       };
 
-      jest.spyOn(prisma.user, "findUnique").mockResolvedValue(mockUser as any);
+      prisma.user.findUnique.mockResolvedValue(mockUser as any);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.validateUser("test@example.com", "password");
@@ -75,7 +71,7 @@ describe("AuthService", () => {
     });
 
     it("should return null when user not found", async () => {
-      jest.spyOn(prisma.user, "findUnique").mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue(null);
 
       const result = await service.validateUser("test@example.com", "password");
 
@@ -93,7 +89,7 @@ describe("AuthService", () => {
         updatedAt: new Date(),
       };
 
-      jest.spyOn(prisma.user, "findUnique").mockResolvedValue(mockUser as any);
+      prisma.user.findUnique.mockResolvedValue(mockUser as any);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       const result = await service.validateUser("test@example.com", "password");
@@ -147,9 +143,9 @@ describe("AuthService", () => {
         updatedAt: new Date(),
       };
 
-      jest.spyOn(prisma.user, "findUnique").mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue("hashedPassword");
-      jest.spyOn(prisma.user, "create").mockResolvedValue(createdUser as any);
+      prisma.user.create.mockResolvedValue(createdUser);
 
       const result = await service.register(registerDto);
 
@@ -179,7 +175,7 @@ describe("AuthService", () => {
         name: "Test User",
       };
 
-      jest.spyOn(prisma.user, "findUnique").mockResolvedValue({
+      prisma.user.findUnique.mockResolvedValue({
         id: 1,
         email: "test@example.com",
         password: "hashedPassword",
@@ -206,7 +202,7 @@ describe("AuthService", () => {
         updatedAt: new Date(),
       };
 
-      jest.spyOn(prisma.user, "findUnique").mockResolvedValue(mockUser as any);
+      prisma.user.findUnique.mockResolvedValue(mockUser as any);
 
       const result = await service.getProfile(1);
 
@@ -225,7 +221,7 @@ describe("AuthService", () => {
     });
 
     it("should throw UnauthorizedException when user not found", async () => {
-      jest.spyOn(prisma.user, "findUnique").mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue(null);
 
       await expect(service.getProfile(999)).rejects.toThrow(UnauthorizedException);
     });

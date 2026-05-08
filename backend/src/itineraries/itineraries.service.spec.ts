@@ -1,10 +1,11 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { ItinerariesService } from "./itineraries.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 describe("ItinerariesService", () => {
   let service: ItinerariesService;
-  let prisma: PrismaService;
+  let prisma: DeepMockProxy<PrismaService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -12,29 +13,13 @@ describe("ItinerariesService", () => {
         ItinerariesService,
         {
           provide: PrismaService,
-          useValue: {
-            itinerary: {
-              aggregate: jest.fn(),
-              create: jest.fn(),
-              findMany: jest.fn(),
-              findUnique: jest.fn(),
-              update: jest.fn(),
-              delete: jest.fn(),
-            },
-            itineraryItem: {
-              aggregate: jest.fn(),
-              create: jest.fn(),
-              update: jest.fn(),
-              delete: jest.fn(),
-              findMany: jest.fn(),
-            },
-          },
+          useValue: mockDeep<PrismaService>(),
         },
       ],
     }).compile();
 
     service = module.get<ItinerariesService>(ItinerariesService);
-    prisma = module.get(PrismaService);
+    prisma = module.get(PrismaService) as DeepMockProxy<PrismaService>;
   });
 
   it("should be defined", () => {
@@ -43,10 +28,10 @@ describe("ItinerariesService", () => {
 
   describe("create", () => {
     it("should create itinerary with next day number", async () => {
-      jest.spyOn(prisma.itinerary, "aggregate").mockResolvedValue({
+      prisma.itinerary.aggregate.mockResolvedValue({
         _max: { dayNumber: 3 },
       } as any);
-      jest.spyOn(prisma.itinerary, "create").mockResolvedValue({
+      prisma.itinerary.create.mockResolvedValue({
         id: 1,
         dayNumber: 4,
       } as any);
@@ -65,10 +50,10 @@ describe("ItinerariesService", () => {
     });
 
     it("should start with day 1 when no existing itineraries", async () => {
-      jest.spyOn(prisma.itinerary, "aggregate").mockResolvedValue({
+      prisma.itinerary.aggregate.mockResolvedValue({
         _max: { dayNumber: null },
       } as any);
-      jest.spyOn(prisma.itinerary, "create").mockResolvedValue({
+      prisma.itinerary.create.mockResolvedValue({
         id: 1,
         dayNumber: 1,
       } as any);
@@ -89,7 +74,7 @@ describe("ItinerariesService", () => {
         { id: 1, dayNumber: 1 },
         { id: 2, dayNumber: 2 },
       ];
-      jest.spyOn(prisma.itinerary, "findMany").mockResolvedValue(mockItineraries as any);
+      prisma.itinerary.findMany.mockResolvedValue(mockItineraries as any);
 
       const result = await service.findByPlan(1);
 
@@ -100,7 +85,7 @@ describe("ItinerariesService", () => {
   describe("findOne", () => {
     it("should find itinerary by id", async () => {
       const mockItinerary = { id: 1, dayNumber: 1 };
-      jest.spyOn(prisma.itinerary, "findUnique").mockResolvedValue(mockItinerary as any);
+      prisma.itinerary.findUnique.mockResolvedValue(mockItinerary as any);
 
       const result = await service.findOne(1);
 
@@ -115,7 +100,7 @@ describe("ItinerariesService", () => {
         dayNumber: 5,
       };
 
-      jest.spyOn(prisma.itinerary, "update").mockResolvedValue({ id: 1 } as any);
+      prisma.itinerary.update.mockResolvedValue({ id: 1 } as any);
 
       await service.update(1, updateDto as any);
 
@@ -132,7 +117,7 @@ describe("ItinerariesService", () => {
 
   describe("remove", () => {
     it("should remove itinerary", async () => {
-      jest.spyOn(prisma.itinerary, "delete").mockResolvedValue({ id: 1 } as any);
+      prisma.itinerary.delete.mockResolvedValue({ id: 1 } as any);
 
       const result = await service.remove(1);
 
@@ -142,10 +127,10 @@ describe("ItinerariesService", () => {
 
   describe("createItem", () => {
     it("should create item with next sort order", async () => {
-      jest.spyOn(prisma.itineraryItem, "aggregate").mockResolvedValue({
+      prisma.itineraryItem.aggregate.mockResolvedValue({
         _max: { sortOrder: 2 },
       } as any);
-      jest.spyOn(prisma.itineraryItem, "create").mockResolvedValue({
+      prisma.itineraryItem.create.mockResolvedValue({
         id: 1,
         sortOrder: 3,
       } as any);
@@ -173,7 +158,7 @@ describe("ItinerariesService", () => {
         type: "RESTAURANT",
       };
 
-      jest.spyOn(prisma.itineraryItem, "update").mockResolvedValue({ id: 1 } as any);
+      prisma.itineraryItem.update.mockResolvedValue({ id: 1 } as any);
 
       await service.updateItem(1, updateDto as any);
 
@@ -191,7 +176,7 @@ describe("ItinerariesService", () => {
 
   describe("removeItem", () => {
     it("should remove item", async () => {
-      jest.spyOn(prisma.itineraryItem, "delete").mockResolvedValue({ id: 1 } as any);
+      prisma.itineraryItem.delete.mockResolvedValue({ id: 1 } as any);
 
       const result = await service.removeItem(1);
 
@@ -208,8 +193,8 @@ describe("ItinerariesService", () => {
         { id: 2, sortOrder: 2 },
       ];
 
-      jest.spyOn(prisma.itineraryItem, "update").mockResolvedValue({} as any);
-      jest.spyOn(prisma.itineraryItem, "findMany").mockResolvedValue(reorderedItems as any);
+      prisma.itineraryItem.update.mockResolvedValue({} as any);
+      prisma.itineraryItem.findMany.mockResolvedValue(reorderedItems as any);
 
       const result = await service.reorderItems(1, itemIds);
 

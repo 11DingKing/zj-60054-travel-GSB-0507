@@ -1,10 +1,11 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { FavoritesService } from "./favorites.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 describe("FavoritesService", () => {
   let service: FavoritesService;
-  let prisma: PrismaService;
+  let prisma: DeepMockProxy<PrismaService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -12,20 +13,13 @@ describe("FavoritesService", () => {
         FavoritesService,
         {
           provide: PrismaService,
-          useValue: {
-            favorite: {
-              findMany: jest.fn(),
-              upsert: jest.fn(),
-              delete: jest.fn(),
-              findUnique: jest.fn(),
-            },
-          },
+          useValue: mockDeep<PrismaService>(),
         },
       ],
     }).compile();
 
     service = module.get<FavoritesService>(FavoritesService);
-    prisma = module.get(PrismaService);
+    prisma = module.get(PrismaService) as DeepMockProxy<PrismaService>;
   });
 
   it("should be defined", () => {
@@ -39,7 +33,7 @@ describe("FavoritesService", () => {
         { id: 2, plan: { id: 2, title: "Plan 2" } },
       ];
 
-      jest.spyOn(prisma.favorite, "findMany").mockResolvedValue(mockFavorites as any);
+      prisma.favorite.findMany.mockResolvedValue(mockFavorites as any);
 
       const result = await service.findByUser(1);
 
@@ -50,7 +44,7 @@ describe("FavoritesService", () => {
     });
 
     it("should return empty array when no favorites", async () => {
-      jest.spyOn(prisma.favorite, "findMany").mockResolvedValue([]);
+      prisma.favorite.findMany.mockResolvedValue([]);
 
       const result = await service.findByUser(1);
 
@@ -61,7 +55,7 @@ describe("FavoritesService", () => {
   describe("add", () => {
     it("should add a favorite using upsert", async () => {
       const mockFavorite = { id: 1, userId: 1, planId: 1 };
-      jest.spyOn(prisma.favorite, "upsert").mockResolvedValue(mockFavorite as any);
+      prisma.favorite.upsert.mockResolvedValue(mockFavorite as any);
 
       const result = await service.add(1, 1);
 
@@ -76,7 +70,7 @@ describe("FavoritesService", () => {
 
   describe("remove", () => {
     it("should remove a favorite and return success", async () => {
-      jest.spyOn(prisma.favorite, "delete").mockResolvedValue({ id: 1 } as any);
+      prisma.favorite.delete.mockResolvedValue({ id: 1 } as any);
 
       const result = await service.remove(1, 1);
 
@@ -84,7 +78,7 @@ describe("FavoritesService", () => {
     });
 
     it("should return success even if favorite does not exist", async () => {
-      jest.spyOn(prisma.favorite, "delete").mockRejectedValue(new Error("Not found"));
+      prisma.favorite.delete.mockRejectedValue(new Error("Not found"));
 
       const result = await service.remove(999, 999);
 
@@ -94,7 +88,7 @@ describe("FavoritesService", () => {
 
   describe("isFavorite", () => {
     it("should return true when favorite exists", async () => {
-      jest.spyOn(prisma.favorite, "findUnique").mockResolvedValue({
+      prisma.favorite.findUnique.mockResolvedValue({
         id: 1,
         userId: 1,
         planId: 1,
@@ -106,7 +100,7 @@ describe("FavoritesService", () => {
     });
 
     it("should return false when favorite does not exist", async () => {
-      jest.spyOn(prisma.favorite, "findUnique").mockResolvedValue(null);
+      prisma.favorite.findUnique.mockResolvedValue(null);
 
       const result = await service.isFavorite(1, 999);
 

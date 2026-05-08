@@ -2,10 +2,11 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { PlansService } from "./plans.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 describe("PlansService", () => {
   let service: PlansService;
-  let prisma: PrismaService;
+  let prisma: DeepMockProxy<PrismaService>;
   let redis: RedisService;
 
   beforeEach(async () => {
@@ -14,16 +15,7 @@ describe("PlansService", () => {
         PlansService,
         {
           provide: PrismaService,
-          useValue: {
-            plan: {
-              create: jest.fn(),
-              findMany: jest.fn(),
-              findUnique: jest.fn(),
-              update: jest.fn(),
-              delete: jest.fn(),
-              groupBy: jest.fn(),
-            },
-          },
+          useValue: mockDeep<PrismaService>(),
         },
         {
           provide: RedisService,
@@ -37,7 +29,7 @@ describe("PlansService", () => {
     }).compile();
 
     service = module.get<PlansService>(PlansService);
-    prisma = module.get(PrismaService);
+    prisma = module.get(PrismaService) as DeepMockProxy<PrismaService>;
     redis = module.get(RedisService);
   });
 
@@ -73,7 +65,7 @@ describe("PlansService", () => {
         favorites: [],
       };
 
-      jest.spyOn(prisma.plan, "create").mockResolvedValue(createdPlan as any);
+      prisma.plan.create.mockResolvedValue(createdPlan as any);
 
       const result = await service.create(1, createDto as any);
 
@@ -86,7 +78,7 @@ describe("PlansService", () => {
   describe("findByUser", () => {
     it("should find plans by user without status filter", async () => {
       const mockPlans = [{ id: 1, title: "Test Plan" }];
-      jest.spyOn(prisma.plan, "findMany").mockResolvedValue(mockPlans as any);
+      prisma.plan.findMany.mockResolvedValue(mockPlans as any);
 
       const result = await service.findByUser(1);
 
@@ -100,7 +92,7 @@ describe("PlansService", () => {
 
     it("should find plans by user with status filter", async () => {
       const mockPlans = [{ id: 1, title: "Test Plan", status: "COMPLETED" }];
-      jest.spyOn(prisma.plan, "findMany").mockResolvedValue(mockPlans as any);
+      prisma.plan.findMany.mockResolvedValue(mockPlans as any);
 
       const result = await service.findByUser(1, "COMPLETED");
 
@@ -127,7 +119,7 @@ describe("PlansService", () => {
     it("should fetch from database and cache when no cache", async () => {
       const plans = [{ id: 1, title: "Public Plan" }];
       jest.spyOn(redis, "get").mockResolvedValue(null);
-      jest.spyOn(prisma.plan, "findMany").mockResolvedValue(plans as any);
+      prisma.plan.findMany.mockResolvedValue(plans as any);
 
       const result = await service.findPublic();
 
@@ -138,7 +130,7 @@ describe("PlansService", () => {
     it("should search with keyword and limit", async () => {
       const plans = [{ id: 1, title: "Beijing Trip" }];
       jest.spyOn(redis, "get").mockResolvedValue(null);
-      jest.spyOn(prisma.plan, "findMany").mockResolvedValue(plans as any);
+      prisma.plan.findMany.mockResolvedValue(plans as any);
 
       const result = await service.findPublic("beijing", 10);
 
@@ -173,7 +165,7 @@ describe("PlansService", () => {
         { destinationCity: "上海", _count: { id: 8 } },
       ];
       jest.spyOn(redis, "get").mockResolvedValue(null);
-      jest.spyOn(prisma.plan, "groupBy").mockResolvedValue(destinations as any);
+      prisma.plan.groupBy.mockResolvedValue(destinations as any);
 
       const result = await service.getPopularDestinations();
 
@@ -192,7 +184,7 @@ describe("PlansService", () => {
   describe("findOne", () => {
     it("should find a plan by id", async () => {
       const mockPlan = { id: 1, title: "Test Plan" };
-      jest.spyOn(prisma.plan, "findUnique").mockResolvedValue(mockPlan as any);
+      prisma.plan.findUnique.mockResolvedValue(mockPlan as any);
 
       const result = await service.findOne(1);
 
@@ -205,7 +197,7 @@ describe("PlansService", () => {
       const updateDto = { title: "Updated Plan" };
       const updatedPlan = { id: 1, title: "Updated Plan" };
 
-      jest.spyOn(prisma.plan, "update").mockResolvedValue(updatedPlan as any);
+      prisma.plan.update.mockResolvedValue(updatedPlan as any);
 
       const result = await service.update(1, updateDto as any);
 
@@ -217,7 +209,7 @@ describe("PlansService", () => {
 
   describe("remove", () => {
     it("should remove a plan and invalidate cache", async () => {
-      jest.spyOn(prisma.plan, "delete").mockResolvedValue({ id: 1 } as any);
+      prisma.plan.delete.mockResolvedValue({ id: 1 } as any);
 
       const result = await service.remove(1);
 

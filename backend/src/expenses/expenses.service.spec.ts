@@ -1,10 +1,11 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { ExpensesService } from "./expenses.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 describe("ExpensesService", () => {
   let service: ExpensesService;
-  let prisma: PrismaService;
+  let prisma: DeepMockProxy<PrismaService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -12,21 +13,13 @@ describe("ExpensesService", () => {
         ExpensesService,
         {
           provide: PrismaService,
-          useValue: {
-            expense: {
-              create: jest.fn(),
-              findMany: jest.fn(),
-              findUnique: jest.fn(),
-              update: jest.fn(),
-              delete: jest.fn(),
-            },
-          },
+          useValue: mockDeep<PrismaService>(),
         },
       ],
     }).compile();
 
     service = module.get<ExpensesService>(ExpensesService);
-    prisma = module.get(PrismaService);
+    prisma = module.get(PrismaService) as DeepMockProxy<PrismaService>;
   });
 
   it("should be defined", () => {
@@ -49,7 +42,7 @@ describe("ExpensesService", () => {
         planId: 1,
       };
 
-      jest.spyOn(prisma.expense, "create").mockResolvedValue(createdExpense as any);
+      prisma.expense.create.mockResolvedValue(createdExpense as any);
 
       const result = await service.create(1, createDto as any);
 
@@ -63,7 +56,7 @@ describe("ExpensesService", () => {
         { id: 1, amount: 500 },
         { id: 2, amount: 300 },
       ];
-      jest.spyOn(prisma.expense, "findMany").mockResolvedValue(mockExpenses as any);
+      prisma.expense.findMany.mockResolvedValue(mockExpenses as any);
 
       const result = await service.findByPlan(1);
 
@@ -80,7 +73,7 @@ describe("ExpensesService", () => {
         { category: "DINING", amount: 200 },
       ];
 
-      jest.spyOn(prisma.expense, "findMany").mockResolvedValue(expenses as any);
+      prisma.expense.findMany.mockResolvedValue(expenses as any);
 
       const result = await service.getSummary(1);
 
@@ -94,7 +87,7 @@ describe("ExpensesService", () => {
     });
 
     it("should return zero summary when no expenses", async () => {
-      jest.spyOn(prisma.expense, "findMany").mockResolvedValue([]);
+      prisma.expense.findMany.mockResolvedValue([]);
 
       const result = await service.getSummary(1);
 
@@ -109,7 +102,7 @@ describe("ExpensesService", () => {
   describe("findOne", () => {
     it("should find an expense by id", async () => {
       const mockExpense = { id: 1, amount: 500 };
-      jest.spyOn(prisma.expense, "findUnique").mockResolvedValue(mockExpense as any);
+      prisma.expense.findUnique.mockResolvedValue(mockExpense as any);
 
       const result = await service.findOne(1);
 
@@ -122,7 +115,7 @@ describe("ExpensesService", () => {
       const updateDto = { amount: 600 };
       const updatedExpense = { id: 1, amount: 600 };
 
-      jest.spyOn(prisma.expense, "update").mockResolvedValue(updatedExpense as any);
+      prisma.expense.update.mockResolvedValue(updatedExpense as any);
 
       const result = await service.update(1, updateDto as any);
 
@@ -135,7 +128,7 @@ describe("ExpensesService", () => {
         category: "DINING",
       };
 
-      jest.spyOn(prisma.expense, "update").mockResolvedValue({ id: 1 } as any);
+      prisma.expense.update.mockResolvedValue({ id: 1 } as any);
 
       await service.update(1, updateDto as any);
 
@@ -151,7 +144,7 @@ describe("ExpensesService", () => {
 
   describe("remove", () => {
     it("should remove an expense", async () => {
-      jest.spyOn(prisma.expense, "delete").mockResolvedValue({ id: 1 } as any);
+      prisma.expense.delete.mockResolvedValue({ id: 1 } as any);
 
       const result = await service.remove(1);
 

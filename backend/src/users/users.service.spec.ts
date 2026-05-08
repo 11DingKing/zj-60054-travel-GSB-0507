@@ -2,10 +2,11 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { UsersService } from "./users.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { NotFoundException } from "@nestjs/common";
+import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 
 describe("UsersService", () => {
   let service: UsersService;
-  let prisma: PrismaService;
+  let prisma: DeepMockProxy<PrismaService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -13,21 +14,13 @@ describe("UsersService", () => {
         UsersService,
         {
           provide: PrismaService,
-          useValue: {
-            user: {
-              findUnique: jest.fn(),
-              update: jest.fn(),
-            },
-            plan: {
-              findMany: jest.fn(),
-            },
-          },
+          useValue: mockDeep<PrismaService>(),
         },
       ],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
-    prisma = module.get(PrismaService);
+    prisma = module.get(PrismaService) as DeepMockProxy<PrismaService>;
   });
 
   it("should be defined", () => {
@@ -45,7 +38,7 @@ describe("UsersService", () => {
         updatedAt: new Date(),
       };
 
-      jest.spyOn(prisma.user, "findUnique").mockResolvedValue(mockUser as any);
+      prisma.user.findUnique.mockResolvedValue(mockUser as any);
 
       const result = await service.findById(1);
 
@@ -53,7 +46,7 @@ describe("UsersService", () => {
     });
 
     it("should throw NotFoundException when user not found", async () => {
-      jest.spyOn(prisma.user, "findUnique").mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue(null);
 
       await expect(service.findById(999)).rejects.toThrow(NotFoundException);
     });
@@ -71,7 +64,7 @@ describe("UsersService", () => {
         updatedAt: new Date(),
       };
 
-      jest.spyOn(prisma.user, "update").mockResolvedValue(updatedUser as any);
+      prisma.user.update.mockResolvedValue(updatedUser as any);
 
       const result = await service.update(1, updateDto);
 
@@ -84,7 +77,7 @@ describe("UsersService", () => {
     });
 
     it("should throw NotFoundException when user not found", async () => {
-      jest.spyOn(prisma.user, "update").mockRejectedValue(new Error("Not found") as any);
+      prisma.user.update.mockRejectedValue(new Error("Not found") as any);
 
       await expect(service.update(999, {})).rejects.toThrow();
     });
@@ -120,7 +113,7 @@ describe("UsersService", () => {
         },
       ];
 
-      jest.spyOn(prisma.plan, "findMany").mockResolvedValue(mockPlans as any);
+      prisma.plan.findMany.mockResolvedValue(mockPlans as any);
 
       const result = await service.getUserStatistics(1);
 
@@ -132,7 +125,7 @@ describe("UsersService", () => {
     });
 
     it("should return zero statistics when no plans", async () => {
-      jest.spyOn(prisma.plan, "findMany").mockResolvedValue([]);
+      prisma.plan.findMany.mockResolvedValue([]);
 
       const result = await service.getUserStatistics(1);
 
